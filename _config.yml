@@ -16,3 +16,7 @@ highlighter: pygments
 permalink: pretty
 paginate: 5
 exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
+
+#Set personal info bar
+sidebar-personal-desc: "我"
+sidebar-portrait: /img/portrait-drfish.jpg 
