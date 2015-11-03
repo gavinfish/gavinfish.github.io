@@ -18,5 +18,5 @@ paginate: 5
 exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
 
 #Set personal info bar
-sidebar-personal-desc: "我"
+sidebar-personal-desc: "Hello World"
 sidebar-portrait: /img/portrait-drfish.jpg 
