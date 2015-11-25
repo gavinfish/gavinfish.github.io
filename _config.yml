@@ -13,8 +13,7 @@ github_username:  shenjie1993
 markdown: kramdown
 kramdown:
   input:  GFM
-  use_coderay: true
-auto: true
+  enable_coderay: true
 highlighter: pygments
 permalink: pretty
 paginate: 5
@@ -25,3 +24,4 @@ sidebar-personal-desc: "Hello World"
 sidebar-portrait: /img/portrait-drfish.jpg 
 
 encoding: "utf-8"
+gems: [jekyll-paginate]

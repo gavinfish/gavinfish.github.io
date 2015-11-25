@@ -2,17 +2,19 @@
 layout: post
 title:  "Tomcat源码分析(一)"
 date:   2015-10-18 09:51:46
-categories: tomcat, 源码
+categories: tomcat 
+tags: tomcat 源码
 ---
 
 # Tomcat源码分析（一）
 
-## &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; ————导读
+## &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; ————导读
 
 
 ---
 
 这篇文章介绍一下tomcat源码阅读环境的搭建。
+
 ## 源码下载
 源码的下载地址在 [这里](http://shinyfeather.com/tomcat/tomcat-8/v8.0.28/src/apache-tomcat-8.0.28-src.zip)，版本为8.0.28，下载后直接解压至某一文件下即可。
 
@@ -25,6 +27,7 @@ categories: tomcat, 源码
 Tomcat自带的构建工具是Ant，但直接运用它的构建构建文件会缺少一些依赖的包，个人比较习惯用Maven管理，所以通过Maven来添加依赖包。以上的工具安装比较简单，可以去网上找相应的教程。
 
 ## 项目的编译
+
 ### 1. ant编译
 在Tocat根目录下运行'ant'命令，由于国内的网络受限的问题，可能不能成功下载相关的文件，这时候要在根目录中找到当前文件夹下的build.properties.default文件，在文件末尾添加如下设置：
 
