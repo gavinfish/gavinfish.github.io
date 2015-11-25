@@ -11,6 +11,9 @@ github_username:  shenjie1993
 
 # Build settings
 markdown: kramdown
+kramdown:
+  input:  GFM
+  use_coderay: true
 auto: true
 highlighter: pygments
 permalink: pretty
