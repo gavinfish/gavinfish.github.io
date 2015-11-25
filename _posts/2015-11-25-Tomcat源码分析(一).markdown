@@ -1,15 +1,14 @@
 ---
 layout: post
-title:  "Tomcat源码分析"
+title:  "Tomcat源码分析(一)"
 date:   2015-10-18 09:51:46
-categories: jekyll update
+categories: tomcat, 源码
 ---
 
 # Tomcat源码分析（一）
 
 ## &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; ————导读
 
-标签（空格分隔）： tomcat 源码
 
 ---
 
@@ -29,14 +28,14 @@ Tomcat自带的构建工具是Ant，但直接运用它的构建构建文件会�
 ### 1. ant编译
 在Tocat根目录下运行'ant'命令，由于国内的网络受限的问题，可能不能成功下载相关的文件，这时候要在根目录中找到当前文件夹下的build.properties.default文件，在文件末尾添加如下设置：
 
-```
-#注意要把下面的值设置为自己的代理域、端口号，以及帐号密码
-proxy.use=true
-proxy.host=proxy.domain
-proxy.port=8080
-proxy.user=username
-proxy.password=password
-```
+
+	#注意要把下面的值设置为自己的代理域、端口号，以及帐号密码
+	proxy.use=true
+	proxy.host=proxy.domain
+	proxy.port=8080
+	proxy.user=username
+	proxy.password=password
+
 
 设置完后重新运行'ant'命令后即可成功编译，运行结果如下：
 
@@ -47,9 +46,9 @@ proxy.password=password
 - 导入成功后会发现工程有大量报错，下面通过Maven来添加依赖包。右键工程->configure->Convert To Maven Project.
 - 现在工程下会多一个pom.xml文件，将里面的内容替换如下：
 
-``` xml
+```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>Tomcat8</groupId>
 	<artifactId>Tomcat8</artifactId>
