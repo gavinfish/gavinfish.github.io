@@ -1,0 +1,108 @@
+---
+layout: post
+title:  "Tomcat源码分析"
+date:   2015-10-18 09:51:46
+categories: jekyll update
+---
+
+# Tomcat源码分析（一）
+
+## &emsp;&emsp;&emsp;&emsp;&emsp;&emsp; ————导读
+
+标签（空格分隔）： tomcat 源码
+
+---
+
+这篇文章介绍一下tomcat源码阅读环境的搭建。
+## 源码下载
+源码的下载地址在 [这里](http://shinyfeather.com/tomcat/tomcat-8/v8.0.28/src/apache-tomcat-8.0.28-src.zip)，版本为8.0.28，下载后直接解压至某一文件下即可。
+
+## 依赖的工具
+- Ant
+- Eclipse
+- Maven
+- JDK7或以上
+
+Tomcat自带的构建工具是Ant，但直接运用它的构建构建文件会缺少一些依赖的包，个人比较习惯用Maven管理，所以通过Maven来添加依赖包。以上的工具安装比较简单，可以去网上找相应的教程。
+
+## 项目的编译
+### 1. ant编译
+在Tocat根目录下运行'ant'命令，由于国内的网络受限的问题，可能不能成功下载相关的文件，这时候要在根目录中找到当前文件夹下的build.properties.default文件，在文件末尾添加如下设置：
+
+```
+#注意要把下面的值设置为自己的代理域、端口号，以及帐号密码
+proxy.use=true
+proxy.host=proxy.domain
+proxy.port=8080
+proxy.user=username
+proxy.password=password
+```
+
+设置完后重新运行'ant'命令后即可成功编译，运行结果如下：
+
+![Ant编译结果](/img/Tomcat Source Code/build-success.jpg)
+
+### 2. 导入eclipse
+- 在eclipse中选中File->New->Project->Java->Java Project from existing Ant Buildfile，选中Tomcat根目录下的build.xml文件作为Ant builfile。
+- 导入成功后会发现工程有大量报错，下面通过Maven来添加依赖包。右键工程->configure->Convert To Maven Project.
+- 现在工程下会多一个pom.xml文件，将里面的内容替换如下：
+
+``` xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>Tomcat8</groupId>
+	<artifactId>Tomcat8</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<build>
+		<sourceDirectory>java</sourceDirectory>
+		<resources>
+			<resource>
+				<directory>java</directory>
+				<excludes>
+					<exclude>**/*.java</exclude>
+				</excludes>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.3</version>
+				<configuration>
+					<source />
+					<target />
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<dependencies>
+		<dependency>
+			<groupId>javax.xml</groupId>
+			<artifactId>jaxrpc-api</artifactId>
+			<version>1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>wsdl4j</groupId>
+			<artifactId>wsdl4j</artifactId>
+			<version>1.6.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jdt.core.compiler</groupId>
+			<artifactId>ecj</artifactId>
+			<version>4.4.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.ant</groupId>
+			<artifactId>ant</artifactId>
+			<version>1.9.6</version>
+		</dependency>
+
+	</dependencies>
+</project>
+```
+
+- 一般保存后会自动编译，如没有则在pom文件上右键Run As->Maven Build即可。
+
+成功build后Tomcat的源码阅读环境就搭建完成了。代码目录结构如下：
+
+![Tomcat工程目录](/img/Tomcat Source Code/eclipse-structure.jpg)
