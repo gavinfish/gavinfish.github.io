@@ -1,9 +1,10 @@
 ---
 layout: post
 title:  "Tomcat源码分析(一)"
-date:   2015-10-18 09:51:46
+date:   2015-11-25
 categories: tomcat 
-tags: tomcat 源码
+tags: Tomcat 源码
+
 ---
 
 # Tomcat源码分析（一）
@@ -108,3 +109,5 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 成功build后Tomcat的源码阅读环境就搭建完成了。代码目录结构如下：
 
 ![Tomcat工程目录](/img/Tomcat Source Code/eclipse-structure.jpg)
+
+至此Tomcat的源码阅读环境就搭建完成了，enjoy it！
