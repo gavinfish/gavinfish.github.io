@@ -3,7 +3,7 @@ layout: post
 title:  "Hadoop之HDFS"
 date:   2015-11-26
 categories: Hadoop 
-tags: Hadoop
+tags: Hadoop HDFS
 
 ---
 
