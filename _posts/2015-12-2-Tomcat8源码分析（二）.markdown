@@ -1,0 +1,100 @@
+---
+layout: post
+title:  "Tomcat8源码分析（二）"
+date:   2015-12-2
+categories: Tomcat 
+tags: Tomcat 源码
+
+---
+
+# Tomcat8源码分析（二）
+
+## &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; ————包结构分析
+
+## 介绍
+
+Tomcat是一个Servlet容器，并提供了作为Web服务器的一些特有功能，如Tomcat管理和控制平台、安全域管理和Tomcat阀等。由于Tomcat本身也内含了一个HTTP服务器，它也可以被视作一个单独的Web服务器。
+
+## 基本概念
+
+Tomcat的几个核心组件：
+
+- **Server**：Server表示了整个Tomcat容器。
+- **Service**：Service是一个在Server中，通过一个或多个Connector与一个Engine相连的中间件。
+- **Engine**：Engine用来处理Service的请求并返回结果。
+- **Host**：Host与域名相对应，一个Engine可以包含多个Host。
+- **Connector**：Connector用来与客户端通信，Tomcat中有多种不同的Connector实现方案。
+- **Context**：Context表示一个Web应用，一个Host可以有多个Context，通过不同的路径来区分。
+
+各组件的关系如下图所示：
+
+![tomcat-components](/img/Tomcat Source Code/tomcat-components.jpg)
+
+## 工程目录解析
+
+Tomcat工程目录如下：
+
+![tomcat-catalog](/img/Tomcat Source Code/tomcat-catalog.jpg)
+
+各目录的主要内容：
+
+- **javax**：Java中标准的Servlet规范。
+- **catalina**：Tomcat中的Servlet容器。
+- **coyote**：Tomcat中的连接器。
+- **el**：正则表达式解析规范。
+- **jasper**：JSP文件解析规范。
+- **juli**：Tomcat的日志系统。
+- **naming**：JNDI的实现。
+- **tomcat**：Tomcat的工具包。
+
+本系列文章主要解析apache下的源码，基本不涉及javax中的代码。
+
+##  错误信息
+
+在Tomcat中有大量的错误信息，Tomcat管理这些信息的方式是将出错信息放在文件中管理。为了减少维护的压力，基本上每个包都会有相应的属性文件。举例来说，在org.apache.catalina.authenticator包中，存在LocalStrings.properties文件。同时为了适应国际化需求，属性文件会提供多国语言的支持。如加es后缀的表示西班牙语，加ja后缀的表示日本语，加fr后缀的表示法语。
+
+这些错误信息统一由一个叫作org.apache.tomcat.util.res.StringManager的类管理，此外在org.apache.catalina.tribes.util和org.apache.naming包中也分别有为自己所在包定制的StringManager。这三个类基本一样，可能是这两个包需要特殊处理或为了将来拓展的考虑。
+
+考虑到日志调用的频繁性，这个类用了单例模式来提供实例，其中涉及了ResourceBundle和Locale这两个Java用来实现国际化的类，相关用法可以自己看看API，具体代码如下：
+
+```java
+    //私有构造函数
+    private StringManager(String packageName, Locale locale) {
+        //在构造函数中初始化了ResourceBundle和Locale
+    }
+    
+    //提供公共的静态方法让外部获得实例
+    public static final synchronized StringManager getManager(
+            String packageName, Locale locale) {
+
+        Map<Locale,StringManager> map = managers.get(packageName);
+        //这里比较有意思，为了不让维护的Map过大，自己设定了阈值，如果超过就进行处理
+        if (map == null) {
+            map = new LinkedHashMap<Locale,StringManager>(LOCALE_CACHE_SIZE, 1, true) {
+                private static final long serialVersionUID = 1L;
+                @Override
+                protected boolean removeEldestEntry(
+                        Map.Entry<Locale,StringManager> eldest) {
+                    if (size() > (LOCALE_CACHE_SIZE - 1)) {
+                        return true;
+                    }
+                    return false;
+                }
+            };
+            managers.put(packageName, map);
+        }
+
+        StringManager mgr = map.get(locale);
+        if (mgr == null) {
+            mgr = new StringManager(packageName, locale);
+            map.put(locale, mgr);
+        }
+        return mgr;
+    }
+```
+
+StringManager对外提供了两个获取键对应值的方法，一个是普通获取，另一个通过MessageFormat格式化了信息后返回。
+
+## 常量管理
+
+Tomcat中的常量也是通过统一的类来管理的，主要分为两种类型，以Catalina为例，在Catalina中有一个Globals类，它包含了会在它的多个子包中都会用到的常量，而在每个字包中基本都会有一个叫做Constants的类来管理自己包内使用的常量。每个Constants中都会有表明这个包位置的常量Package，StringManager都是通过每个包中的这个常量来获取相应的实例。
