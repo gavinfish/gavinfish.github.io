@@ -53,7 +53,7 @@ Tomcat工程目录如下：
 
 在Tomcat中有大量的错误信息，Tomcat管理这些信息的方式是将出错信息放在文件中管理。为了减少维护的压力，基本上每个包都会有相应的属性文件。举例来说，在org.apache.catalina.authenticator包中，存在LocalStrings.properties文件。同时为了适应国际化需求，属性文件会提供多国语言的支持。如加es后缀的表示西班牙语，加ja后缀的表示日本语，加fr后缀的表示法语。
 
-这些错误信息统一由一个叫作org.apache.tomcat.util.res.StringManager的类管理，此外在org.apache.catalina.tribes.util和org.apache.naming包中也分别有为自己所在包定制的StringManager。这三个类基本一样，可能是这两个包需要特殊处理或为了将来拓展的考虑。
+这些错误信息统一由一个叫作org.apache.tomcat.util.res.StringManager的类管理，此外在org.apache.catalina.tribes.util和org.apache.naming包中也分别有为自己所在包定制的StringManager。这三个类基本相同，只是tomcat包中的StringManager可同时支持多种Locale。
 
 考虑到日志调用的频繁性，这个类用了单例模式来提供实例，其中涉及了ResourceBundle和Locale这两个Java用来实现国际化的类，相关用法可以自己看看API，具体代码如下：
 
