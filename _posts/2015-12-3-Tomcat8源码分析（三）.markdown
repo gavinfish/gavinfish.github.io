@@ -66,7 +66,7 @@ Lifecycle对外提供的方法主要分为两大类，一类是对监听器的�
 
 实现了Lifecycle接口的非常之多，具体可以去看它继承树，这里给出一些实现或继承该接口的关键类或接口。
 
-![lifecycle-hierarchy](pic)
+![lifecycle-hierarchy](/img/Tomcat Source Code/tomcat-hierarchy.png)
 
 ## LifecycleListener
 
@@ -175,7 +175,7 @@ public enum LifecycleState {
 
 你会发现在枚举中有很多之前没有提到的状态，下面列出各个状态之间的转换关系：
 
-![state-transfer](pic)
+![state-transfer](/img/Tomcat Source Code/tomcat-lifecycle.jpg)
 
 ## LifecycleSupport
 
