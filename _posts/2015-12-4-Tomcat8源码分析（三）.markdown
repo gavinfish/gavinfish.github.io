@@ -1,0 +1,259 @@
+---
+layout: post
+title:  "Tomcat8源码分析（三）"
+date:   2015-12-4
+categories: Tomcat 
+tags: Tomcat 源码
+
+---
+
+# Tomcat8源码分析（三）
+
+## &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; ————生命周期
+
+上一节已经介绍了Tomcat中的一些基本组件，本节主要解读一下Tomcat对这些组件的管理。在阅读本节之前请先了解一下设计模式之观察者模式。
+
+## 生命周期
+
+每一个组件都会存在很多的状态，如初始化、开始、停止等等。而在状态之间的切换需要做很多相应的工作。我们把Tomcat组件的各个状态以及状态之间的转换统称为Tomcat的生命周期。在Tomcat中参与生命周期管理的主要有以下几个类或接口：
+
+- **Lifecycle**：表示生命周期概念的接口。
+- **LifecycleListener**：用来监听组件状态变化并触发相应事件的监听器。
+- **LifecycleEvent**：组件状态变化时触发的事件。
+- **LifecycleException**：生命周期相关异常。
+- **LifecycleState**：组件的有效状态枚举。
+- **LifecycleSupport**：用来帮助传送消息给监听器的辅助类。
+- **LifecycleBase**：Lifecycle接口的基础实现类，主要实现了制定启动和停止状态相关的转换规则。
+
+下面分别对这几个类进行解析。
+
+## Lifecycle
+
+这个接口声明了能对组件施加影响的生命周期事件类型常量，可以分为在状态中、状态前和状态后（不是每个状态都有这相应的三种情况）。包含的状态有初始化、启动、停止、销毁、配置，以及一个特殊的阶段性状态，具体常量如下：
+
+```java
+    public static final String BEFORE_INIT_EVENT = "before_init";
+    public static final String AFTER_INIT_EVENT = "after_init";
+    public static final String START_EVENT = "start";
+    public static final String BEFORE_START_EVENT = "before_start";
+    public static final String AFTER_START_EVENT = "after_start";
+    public static final String STOP_EVENT = "stop";
+    public static final String BEFORE_STOP_EVENT = "before_stop";
+    public static final String AFTER_STOP_EVENT = "after_stop";
+    public static final String AFTER_DESTROY_EVENT = "after_destroy";
+    public static final String BEFORE_DESTROY_EVENT = "before_destroy";
+    public static final String PERIODIC_EVENT = "periodic";
+    public static final String CONFIGURE_START_EVENT = "configure_start";
+    public static final String CONFIGURE_STOP_EVENT = "configure_stop";
+```
+
+Lifecycle对外提供的方法主要分为两大类，一类是对监听器的管理，另一类是生命周期的各个状态，需要根据状态来做相应动作和触发事件。
+
+```java
+    //监听器的添加、查找与删除操作
+    public void addLifecycleListener(LifecycleListener listener);
+    public LifecycleListener[] findLifecycleListeners();
+    public void removeLifecycleListener(LifecycleListener listener);
+
+    //触发各个状态相关的生命周期事件来进行准备和善后处理
+    public void init() throws LifecycleException;
+    public void start() throws LifecycleException;
+    public void stop() throws LifecycleException;
+    public void destroy() throws LifecycleException;
+
+    //获取组件当前状态
+    public LifecycleState getState();
+    public String getStateName();
+```
+
+实现了Lifecycle接口的非常之多，具体可以去看它继承树，这里给出一些实现或继承该接口的关键类或接口。
+
+![lifecycle-hierarchy](pic)
+
+## LifecycleListener
+
+LifecycleListener表示对某一个生命周期事件的监听。这个接口非常简单，只有一个方法。
+
+```java
+    //定义某一事件发生时需要的行为
+    public void lifecycleEvent(LifecycleEvent event);
+```
+
+## LifecycleEvent
+
+LifecycleEvent继承自Java的事件对象EventObject，是一个简单的类，由事件相关组件、事件的类型和事件相关数据组成。
+
+```java
+public final class LifecycleEvent extends EventObject {
+    private static final long serialVersionUID = 1L;
+    private final Object data;
+    private final String type;
+
+    public LifecycleEvent(Lifecycle lifecycle, String type, Object data) {
+        super(lifecycle);
+        this.type = type;
+        this.data = data;
+    }
+
+    public Object getData() {
+        return (this.data);
+    }
+
+    public Lifecycle getLifecycle() {
+        return (Lifecycle) getSource();
+    }
+
+    public String getType() {
+        return (this.type);
+    }
+}
+```
+
+## LifecycleException
+
+LifecycleException表示一个生命周期相关的异常，继承自Java的Exception类，提供了多种不同的构造函数，此外不能自定义它的子类。
+
+```java
+public final class LifecycleException extends Exception {
+    private static final long serialVersionUID = 1L;
+
+    public LifecycleException() {
+        super();
+    }
+
+    public LifecycleException(String message) {
+        super(message);
+    }
+
+    public LifecycleException(Throwable throwable) {
+        super(throwable);
+    }
+
+    public LifecycleException(String message, Throwable throwable) {
+        super(message, throwable);
+    }
+}
+```
+
+## LifecycleState
+
+LifecycleState枚举出了一个组件合法的生命周期状态，并对外提供两个参数，一个是获取生命周期事件，即在该状态下应该调用哪类生命周期事件，另一个是在该状态下能否调用组件除了getter/setter和生命周期方法外的其他public方法。
+
+```java
+public enum LifecycleState {
+    NEW(false, null),
+    INITIALIZING(false, Lifecycle.BEFORE_INIT_EVENT),
+    INITIALIZED(false, Lifecycle.AFTER_INIT_EVENT),
+    STARTING_PREP(false, Lifecycle.BEFORE_START_EVENT),
+    STARTING(true, Lifecycle.START_EVENT),
+    STARTED(true, Lifecycle.AFTER_START_EVENT),
+    STOPPING_PREP(true, Lifecycle.BEFORE_STOP_EVENT),
+    STOPPING(false, Lifecycle.STOP_EVENT),
+    STOPPED(false, Lifecycle.AFTER_STOP_EVENT),
+    DESTROYING(false, Lifecycle.BEFORE_DESTROY_EVENT),
+    DESTROYED(false, Lifecycle.AFTER_DESTROY_EVENT),
+    FAILED(false, null),
+    MUST_STOP(true, null),
+    MUST_DESTROY(false, null);
+
+    private final boolean available;
+    private final String lifecycleEvent;
+
+    private LifecycleState(boolean available, String lifecycleEvent) {
+        this.available = available;
+        this.lifecycleEvent = lifecycleEvent;
+    }
+
+    //能否调用其他公共分方法
+    public boolean isAvailable() {
+        return available;
+    }
+
+    public String getLifecycleEvent() {
+        return lifecycleEvent;
+    }
+}
+```
+
+你会发现在枚举中有很多之前没有提到的状态，下面列出各个状态之间的转换关系：
+
+![state-transfer](img/Tomcat Source Code/tomcat-lifecycle.jpg)
+
+## LifecycleSupport
+
+LifecycleSupport是用来将事件通知给一个组件的所有监听器的辅助类。它包含了组件和该组件所有的监听器。其中监听器用了线程安全的CopyOnWriteArrayList来存储，主要的事件通知函数如下：
+
+```java
+    public void fireLifecycleEvent(String type, Object data) {
+        LifecycleEvent event = new LifecycleEvent(lifecycle, type, data);
+        for (LifecycleListener listener : listeners) {
+            listener.lifecycleEvent(event);
+        }
+    }
+```
+
+## LifecycleBase
+
+LifecycleBase是实现了Lifecycle的抽象类。它通过持有一个LifecycleSupport来管理监听器。具体的状态函数使用了模板方法模式，LifecycleBase规定了个状态之间的转换规则（是否合法以及状态间的自动转换等，具体参看LifecycleState中的状态转换图），而让用户继承的子类来实现具体的操作。由于代码较多，举一个start方法的例子。
+
+```java
+public final synchronized void start() throws LifecycleException {
+
+        if (LifecycleState.STARTING_PREP.equals(state) ||
+                LifecycleState.STARTING.equals(state) ||
+                LifecycleState.STARTED.equals(state)) {
+
+            if (log.isDebugEnabled()) {
+                Exception e = new LifecycleException();
+                log.debug(sm.getString("lifecycleBase.alreadyStarted",
+                        toString()), e);
+            } else if (log.isInfoEnabled()) {
+                log.info(sm.getString("lifecycleBase.alreadyStarted",
+                        toString()));
+            }
+
+            return;
+        }
+
+        if (state.equals(LifecycleState.NEW)) {
+            init();
+        } else if (state.equals(LifecycleState.FAILED)){
+            stop();
+        } else if (!state.equals(LifecycleState.INITIALIZED) &&
+                !state.equals(LifecycleState.STOPPED)) {
+            invalidTransition(Lifecycle.BEFORE_START_EVENT);
+        }
+
+        setStateInternal(LifecycleState.STARTING_PREP, null, false);
+
+        try {
+            //调用用户实现的方法
+            startInternal();
+        } catch (Throwable t) {
+            ExceptionUtils.handleThrowable(t);
+            setStateInternal(LifecycleState.FAILED, null, false);
+            throw new LifecycleException(
+                    sm.getString("lifecycleBase.startFail",toString()), t);
+        }
+
+        if (state.equals(LifecycleState.FAILED) ||
+                state.equals(LifecycleState.MUST_STOP)) {
+            stop();
+        } else {
+            // Shouldn't be necessary but acts as a check that sub-classes are
+            // doing what they are supposed to.
+            if (!state.equals(LifecycleState.STARTING)) {
+                invalidTransition(Lifecycle.AFTER_START_EVENT);
+            }
+
+            setStateInternal(LifecycleState.STARTED, null, false);
+        }
+    }
+
+    //用户实现的抽象方法
+    protected abstract void startInternal() throws LifecycleException;
+```
+
+## 总结
+
+Tomcat的生命周期比较复杂，状态转换规则较多。整个生命周期的管理主要是通过观察者模式来实现的。
