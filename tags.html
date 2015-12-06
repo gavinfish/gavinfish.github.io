@@ -1,6 +1,7 @@
 ---
-layout: default
 title:
+layout: default
+description: choose which you like
 header-img: "img/contact-bg.jpg"
 ---
 
@@ -29,12 +30,12 @@ header-img: "img/contact-bg.jpg"
                 <a href="#{{ tag[0] }}" title="{{ tag[0] }}">{{ tag[0] }}</a>
             {% endfor %} -->
 
-            <div class="accordion" id="accordion-688484">
+            <div class="accordion" id="accordion-tags">
                 {% for tag in site.tags %}
                 <div class="accordion-group">
                     <div class="accordion-heading">
                     </div>
-                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion-688484" href="#{{ tag[0] }}">{{ tag[0] }}</a>
+                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion-tags" href="#{{ tag[0] }}"><span class="glyphicon glyphicon-tag"></span> {{ tag[0] }}</a>
                     <div id="{{ tag[0] }}" class="accordion-body in collapse">
                         {% for post in tag[1] %}
                         <div class="accordion-inner">
