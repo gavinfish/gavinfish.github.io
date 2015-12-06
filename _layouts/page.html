@@ -16,97 +16,10 @@ layout: default
         </div>
     </div>
     <style type="text/css">
-        .screen { overflow:hidden;margin-top: 100%;margin-right: 30%; width:70%; height:80%; position:absolute;}
-        #screen {left:0; top:0; zoom:1;}
-        #screen a {position:absolute; font-size:12; overflow:hidden; padding:1px 2px; font-weight:bold;}
-        #screen a:hover {border: 1px solid #ccc; background:#666}
+
     </style>
     <script type="text/javascript">
-        var BeautifullMath = function () {
-            var obj = [], xm = 0, ym = 0, axe = 0, aye = 0, parts = 50, scr,aArr, txe, tye, nw, nh;
-            var colorArr = ['black','blue','red','green','yellow'];
-            var addEvent = function (o, e, f) {
-                window.addEventListener ? o.addEventListener(e, f, false) : o.attachEvent('on'+e, function(){f.call(o)})
-            }
-            var resize = function () {
-                nw = scr.offsetWidth * .5;
-                nh = scr.offsetHeight * .5;
-            }
-            var init = function (id, f) {
-                scr = document.getElementById(id);
-                aArr = document.getElementsByName("tag");
-                addEvent(document, 'mousemove', function(e){
-                    e = e || window.event;
-                    xm = e.clientX;
-                    ym = e.clientY;
-                });
-                resize();
-                addEvent(window, 'resize', resize);
-                __init(f);
-                setInterval(run, 16);
-            }
-            var __init = function (f) {
-                for (var i=0; i<aArr.length; i++) {
-                    var o = {};
-                    o.p = aArr[i];
-                    o.p.style.color = colorArr[Math.round(Math.random()*4)];
-                    var r = i/parts, j, a, b;
-                    j = i % parts;
-                    a = Math.floor(j)/200+(Math.floor(j/2)%10)/5* Math.PI * 2;
-                    b = Math.acos(-0.9+(j%4)*0.6);
-                    r = !!f?f(r):r-r*r+.5;
-                    var sbr = Math.sin(b) * r;
-                    o.x = Math.sin(a) * sbr;
-                    o.y = Math.cos(a) * sbr;
-                    o.z = Math.cos(b) * r;
-                    obj.push(o);
-                    o.transform = function () {
-                        var ax = .02 * txe,
-                                ay = .02 * tye,
-                                cx = Math.cos(ax),
-                                sx = Math.sin(ax),
-                                cy = Math.cos(ay),
-                                sy = Math.sin(ay);
-//rotation
-                        var z = this.y * sx + this.z * cx;
-                        this.y = this.y * cx + this.z * -sx;
-                        this.z = this.x * -sy + z * cy;
-                        this.x = this.x * cy + z * sy;
-//3d
-                        var scale = 1 / (1 + this.z),
-                                x = this.x * scale * nh + nw - scale * 2,
-                                y = this.y * scale * nh + nh - scale * 2;
-//set style
-                        var p = this.p.style;
-                        if (x >= 0 && y >=0 && x < nw * 2 && y < nh * 2) {
-                            var c = Math.round(256 + (-this.z * 256));
-                            p.left = Math.round(x) + 'px';
-                            p.top = Math.round(y) + 'px';
-                            p.fontSize = Math.round(12*scale) + 'px';
-                            p.zIndex = 200 + Math.floor(-this.z * 100);
-                            p.opacity = .6 - this.z;
-                            p.filter = 'alpha(opacity='+100*(.6-this.z)+')';
-                        } else p.width = "0px";
-                    }
-                }
-            }
-//run function
-            var run = function () {
-                var se = 1 / nh;
-                txe = (ym - axe) * se;
-                tye = (xm - aye) * se;
-                axe += txe;
-                aye += tye;
-                /* ---- anim particles ---- */
-                for (var i = 0, o; o = obj[i]; i++) o.transform();
-            }
-            return {init:init}
-        }();
-        onload = function () {
-            BeautifullMath.init('screen', function(r){
-                return .4;
-            });
-        }
+
     </script>
 </header>
 
@@ -114,92 +27,88 @@ layout: default
 <div class="container">
     <div class="row">
 
-    <!-- Post Container -->
-            <div class="
+        <!-- Post Container -->
+        <div class="
                 col-lg-8 col-lg-offset-1
                 col-md-8 col-md-offset-1
                 col-sm-12
                 col-xs-12
                 post-container
             ">
-                {{ content }}
-            </div>
-    <!-- Right Sidebar Container -->
-            <div class="
+            {{ content }}
+        </div>
+        <!-- Right Sidebar Container -->
+        <div class="
                 col-lg-3 col-lg-offset-0
                 col-md-3 col-md-offset-0
                 col-sm-12
                 col-xs-12
                 sidebar-right-container
             ">
-                <!-- keep it to maintain the style -->
-                <div>
-                    <!-- for further Info -->
-                </div>
 
-                <!-- Personal Info Shortcut -->
-                <div>
-                    <hr><h5><a href="/about/">ABOUT ME</a></h5>
-                    <div class="short-about">
-                        {% if site.sidebar-portrait %}
-                            <img src="{{site.sidebar-portrait}}" />
-                        {% endif %}
-                        {% if site.sidebar-personal-desc %}
-                            <p>{{site.sidebar-personal-desc}}</p>
-                        {% endif %}
-                        <!-- SNS Link -->
-                        <ul class="list-inline">
-                            {% if site.RSS %}
-                            <li>
-                                <a href="{{ "/feed.xml" | prepend: site.baseurl }}">
+            <!-- Personal Info Shortcut -->
+            <div>
+                <hr><h5><a href="/about/">ABOUT ME</a></h5>
+                <div class="short-about">
+                    {% if site.sidebar-portrait %}
+                    <img src="{{site.sidebar-portrait}}" />
+                    {% endif %}
+                    {% if site.sidebar-personal-desc %}
+                    <p>{{site.sidebar-personal-desc}}</p>
+                    {% endif %}
+                    <!-- SNS Link -->
+                    <ul class="list-inline">
+                        {% if site.RSS %}
+                        <li>
+                            <a href="{{ "/feed.xml" | prepend: site.baseurl }}">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
                                     </span>
-                                </a>
-                            </li>
-                            {% endif %}
-                            {% if site.github_username %}
-                            <li>
-                                <a target="_blank" href="https://github.com/{{ site.github_username }}">
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if site.github_username %}
+                        <li>
+                            <a target="_blank" href="https://github.com/{{ site.github_username }}">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-github fa-stack-1x fa-inverse"></i>
                                     </span>
-                                </a>
-                            </li>
-                            {% endif %}
-                            {% if site.zhihu_username %}
-                            <li>
-                                <a target="_blank" href="https://www.zhihu.com/people/{{ site.zhihu_username }}">
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if site.zhihu_username %}
+                        <li>
+                            <a target="_blank" href="https://www.zhihu.com/people/{{ site.zhihu_username }}">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa  fa-stack-1x fa-inverse"></i>
                                     </span>
-                                </a>
-                            </li>
-                            {% endif %}
-                            {% if site.weibo_username %}
-                            <li>
-                                <a target="_blank" href="http://weibo.com/{{ site.weibo_username }}">
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if site.weibo_username %}
+                        <li>
+                            <a target="_blank" href="http://weibo.com/{{ site.weibo_username }}">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
                                     </span>
-                                </a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </div>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
                 </div>
-                    <div>
-                        <h5><a>TAG CLOUD</a></h5>
-                    <div id="screen" class="screen" style="">
-                        {% for tag in site.tags %}
-                            <a name="tag" href="/tags/#{{ tag[0] }}">{{ tag[0] }}</a>
-                        {% endfor %}
-</div>
-</div>
             </div>
+            <div id="tag-cloud">
+                <h5><a>TAG CLOUD</a></h5>
+                <div id="screen" class="screen" style="">
+                    {% for tag in site.tags %}
+                    <a name="tag" href="/tags/#{{ tag[0] }}">{{ tag[0] }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
