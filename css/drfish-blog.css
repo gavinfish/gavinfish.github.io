@@ -1,3 +1,32 @@
+#tag-cloud {
+    position: relative;
+    width: 240px;
+    height: 450px;
+    margin: 20px auto 0;
+}
+#tag-cloud a {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    font-family: Microsoft YaHei;
+    color: #fff;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 3px 6px;
+}
+#tag-cloud a:hover {
+    border: 1px solid #eee;
+    background: #000;
+}
+#tag-cloud .blue {
+    color: blue;
+}
+#tag-cloud .red {
+    color: red;
+}
+#tag-cloud .yellow {
+    color: yellow;
+}
 .accordion-inner{
   font-size: 21px;
   line-height: 1.3;
