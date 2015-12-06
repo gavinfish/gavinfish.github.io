@@ -1,0 +1,53 @@
+---
+title:
+layout: default
+description: choose which you like
+header-img: "img/contact-bg.jpg"
+---
+
+<!-- Page Header -->
+<header class="intro-header" style="background-image: url('{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}')">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 ">
+                <div class="site-heading">
+                    <h1>TAGS</h1>
+
+                    <span class="subheading">{{ page.description }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="Container">
+    <div class="row">
+        <div class="col-lg-8 col-lg-offset-3
+                col-md-8 col-md-offset-3
+                col-sm-12
+                col-xs-12">
+            <!-- {% for tag in site.tags %}
+                <a href="#{{ tag[0] }}" title="{{ tag[0] }}">{{ tag[0] }}</a>
+            {% endfor %} -->
+
+            <div class="accordion" id="accordion-tags">
+                {% for tag in site.tags %}
+                <div class="accordion-group">
+                    <div class="accordion-heading">
+                    </div>
+                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion-tags" href="#{{ tag[0] }}"><span class="glyphicon glyphicon-tag"></span> {{ tag[0] }}</a>
+                    <div id="{{ tag[0] }}" class="accordion-body in collapse">
+                        {% for post in tag[1] %}
+                        <div class="accordion-inner">
+                            <a href="{{ post.url | prepend: site.baseurl }}">
+                                <h5 class="post-title">{{ post.title }}</h5>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>

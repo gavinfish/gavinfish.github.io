@@ -1,6 +1,9 @@
-/* this is css doc is based on hux-blog.css
- * I will make my own style when the blog basic function done
- */
+.accordion-inner{
+  font-size: 21px;
+  line-height: 1.3;
+  margin-top: 30px;
+  margin-bottom:10px;
+}
 @media (min-width: 1200px) {
   .post-container,
   .sidebar-right-container {
