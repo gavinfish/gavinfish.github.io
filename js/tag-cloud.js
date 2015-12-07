@@ -6,7 +6,7 @@ var active = false;
 var lasta = 1;
 var lastb = 1;
 var distr = true;
-var tspeed = 10;
+var tspeed = 2;
 var size = 200;
 var mouseX = 0;
 var mouseY = 0;
@@ -18,7 +18,7 @@ window.onload = function () {
     var i = 0;
     var oTag = null;
     oDiv = document.getElementById('tag-cloud');
-    aA = oDiv.getElementsByTagName('a');
+    aA = document.getElementsByName('tag');
 
     for (i = 0; i < aA.length; i++) {
         oTag = {};

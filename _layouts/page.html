@@ -101,9 +101,9 @@ layout: default
                     </ul>
                 </div>
             </div>
-            <div id="tag-cloud">
-                <h5><a>TAG CLOUD</a></h5>
-                <div id="screen" class="screen" style="">
+            <div id="tags">
+                <h5><a href="/tags">TAG CLOUD</a></h5>
+                <div id="tag-cloud">
                     {% for tag in site.tags %}
                     <a name="tag" href="/tags/#{{ tag[0] }}">{{ tag[0] }}</a>
                     {% endfor %}

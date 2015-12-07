@@ -1,10 +1,9 @@
 #tag-cloud {
     position: relative;
-    width: 240px;
-    height: 450px;
-    margin: 20px auto 0;
+    width: 200px;
+    height: 200px;
 }
-#tag-cloud a {
+#tag-cloud > a {
     position: absolute;
     top: 0px;
     left: 0px;
@@ -14,7 +13,7 @@
     text-decoration: none;
     padding: 3px 6px;
 }
-#tag-cloud a:hover {
+#tag-cloud > a:hover {
     border: 1px solid #eee;
     background: #000;
 }
