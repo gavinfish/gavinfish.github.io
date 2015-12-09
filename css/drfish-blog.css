@@ -1,15 +1,15 @@
-.portfolio-grid {
+.milestone-grid {
     padding: 0;
     text-align: center;
 }
-.portfolio-grid li {
+.milestone-grid li {
     display: inline-block;
     margin: 5px 5px 5px 5px;
     vertical-align: top;
     width: 215px;
 }
-.portfolio-grid li > a,
-.portfolio-grid li > a img {
+.milestone-grid li > a,
+.milestone-grid li > a img {
     display: block;
     position: relative;
     transition: all 0.3s ease-in-out;
@@ -17,7 +17,7 @@
     -moz-transition: all 0.3s ease-in-out;
     -o-transition: all 0.3s ease-in-out;
 }
-.portfolio-grid li > a img:hover {
+.milestone-grid li > a img:hover {
     border-radius: 50%;
     z-index: 99;
 }
