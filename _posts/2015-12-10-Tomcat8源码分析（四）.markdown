@@ -9,6 +9,7 @@ tags: Tomcat 源码
 
 # Tomcat8源码分析（四）
 
+## &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; ————日志系统
 
 ## 前言
 
@@ -263,7 +264,7 @@ java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
             }
         }
         if ((is == null) && (classLoader == ClassLoader.getSystemClassLoader())) {
-        // 2、应用配置文件获取失败，从Tomcat配置文件中获取，从catalina.sh文件中可以看出，java.util.logging.config.file对应的值是$CATALINA_BASE/conf/logging.properties
+        	// 2、应用配置文件获取失败，从Tomcat配置文件中获取，从catalina.sh文件中可以看出，java.util.logging.config.file对应的值是$CATALINA_BASE/conf/logging.properties
             String configFileStr = System.getProperty("java.util.logging.config.file");
             if (configFileStr != null) {
                 try {
