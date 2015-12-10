@@ -1,0 +1,317 @@
+---
+layout: post
+title:  "Tomcat8源码分析（四）"
+date:   2015-12-10
+categories: Tomcat 
+tags: Tomcat 源码
+
+---
+
+# Tomcat8源码分析（四）
+
+
+## 前言
+
+这一节继续解读一些比较通用的组件，来看一下Tomcat8的日志系统JULI。
+
+## 简介
+
+首先要说的是JULI（Java Util Logging Interface）不是在每个Tomcat版本中都有的，它是在Tomcat6中才引入的。从整体上来说，JULI是构建在Java的日志系统（java.util.logging）之上的，在看JULI的日志系统之前，先简单介绍一下Java的日志系统。
+
+## Java日志系统
+
+Java的日志包在java.util.logging路径下。以下是几个比较重要的组件，及它们之间的关系。
+
+- Level：定义了日志的不同等级。
+- Logger：用来记录日志的类。
+- Handler：规定了日志的输出方式，如控制台输出或写入文件。
+- Formatter：将日志信息格式化。
+
+![log-architecture](/img/Tomcat Source Code/log-architecture.png)
+
+## JULI
+
+JULI对日志的处理方式与Java自带的基本一致，它诞生的最大驱动力是一个Tomcat可以包含很多的应用，而每个应用的日志系统应该相互独立。Java的原生日志系统是每个JVM有一份日志的配置文件，这不符合Tomcat多应用的场景。所以JULI重新实现了一些日志接口。
+
+### Level
+
+JULI中日志的等级直接使用了Java的Level，日志的等级分为以下几级：
+
+- OFF:关闭日志系统
+- SEVERE：记录异常、错误信息
+- WARNING：记录警告信息
+- INFO：记录一般信息
+- CONFIG：记录配置、初始化信息
+- FINE：记录详细信息，多用来程序debug
+- FINER：记录比FINE更加详细的信息
+- FINEST：记录极其详细的信。
+- ALL：记录所有的信息
+
+
+### Logger
+
+**Log**
+
+在JULI中自己定义了一个日志的接口Log，只提供两类接口，一类是某一等级是否可用的方法，另一类是在某一等级下记录日志信息的方法。在Log接口中没有暴露所有的Level等级，而是抽象出来以下几种情景：trace、debug、info、warn、error和fatal。他们与Level的对应关系如下：
+
+> trace   -   FINER
+> debug   -   FINE
+> info    -   INFO
+> warn    -   WARNING
+> error   -   SEVERE
+> fatal   -   SEVERE
+
+**DirectJDKLog**
+
+Log的基础实现类是DirectJDKLog，这个类相对简单，就包装了一下Java的Logger类。但也在原来的基础上进行了一些修改，如修改默认的格式化方式。
+
+```java
+    //在静态块中，由于原来的Formatter格式比较丑，尝试替换
+    static {
+        if( System.getProperty("java.util.logging.config.class") ==null  &&
+                System.getProperty("java.util.logging.config.file") ==null ) {
+
+            try {
+                Class.forName(SIMPLE_CFG).newInstance();
+            } catch( Throwable t ) {
+            }
+            try {
+                //要替换成的Formatter格式
+                Formatter fmt=(Formatter)Class.forName(System.getProperty(FORMATTER, SIMPLE_FMT)).newInstance();
+                Logger root=Logger.getLogger("");
+                Handler handlers[]=root.getHandlers();
+                for( int i=0; i< handlers.length; i++ ) {
+                    //只替换了控制台输出格式，因为这个是默认配置
+                    if( handlers[i] instanceof  ConsoleHandler ) {
+                        handlers[i].setFormatter(fmt);
+                    }
+                }
+            } catch( Throwable t ) {
+                //修改失败就只能用原来的Formatter了
+            }
+
+        }
+    }
+```
+
+此外在封装原来的log方法时，写了一些比较晦涩的代码。
+
+```java
+    //为了包装原log，不得不通过追踪异常栈来获取调用方的类名和参数名
+    private void log(Level level, String msg, Throwable ex) {
+        if (logger.isLoggable(level)) {
+            //模拟一个假的异常来获取栈信息
+            Throwable dummyException=new Throwable();
+            StackTraceElement locations[]=dummyException.getStackTrace();
+            String cname = "unknown";
+            String method = "unknown";
+            if (locations != null && locations.length >2) {
+                //调用者在第三层
+                StackTraceElement caller = locations[2];
+                cname = caller.getClassName();
+                method = caller.getMethodName();
+            }
+            if (ex==null) {
+                logger.logp(level, cname, method, msg);
+            } else {
+                //如果有Throwable参数，会记录相应的异常信息
+                logger.logp(level, cname, method, msg, ex);
+            }
+        }
+    }
+```
+
+**LogFactory**
+
+Log使用了工厂模式来向外提供实例，LogFactory是一个单例，可以通过SeviceLoader为Log提供自定义的实现版本，如果没有配置，就默认使用DirectJDKLog。
+
+### Handler
+
+在JULI中就自定义了两个Handler：FileHandler和AsyncFileHandler。
+
+**FileHandler**
+
+FileHandler可以简单的理解为一个在特定位置写文件的工具类，有一些写操作常用的方法，如open、write(publish)、close、flush等，使用了读写锁，可以正好重温一下锁的相关操作。其中的日志信息通过Formatter来格式化。
+
+**AsyncFileHandler**
+
+AsyncFileHandler继承自FileHandler，实现了异步的写操作。其中缓存存储是通过阻塞双端队列LinkedBlockingDeque来实现的。当应用要通过这个Handler来记录一条消息时，消息会先被存储到队列中。而在后台会有一个专门的线程来处理队列中的消息，取出的消息会通过父类的publish方法写入相应文件内。这样就可以在大量日志需要写入的时候起到缓冲作用，防止都阻塞在写日志这个动作上。
+
+需要注意的是，可以为阻塞双端队列设置不同的模式，在不同模式下，对新进入的消息有不同的处理方式，有些模式下会直接丢弃一些日志：
+
+> OVERFLOW_DROP_LAST：丢弃栈顶的元素
+OVERFLOW_DROP_FIRSH：丢弃栈底的元素
+OVERFLOW_DROP_FLUSH：等待一定时间并重试，不会丢失元素
+OVERFLOW_DROP_CURRENT：丢弃放入的元素
+
+### Formatter
+
+Formatter通过一个format方法将日志记录LogRecord转化成格式化的字符串，JULI提供了三个新的Formatter。
+
+- OnlineFormatter：基本与Java自带的SimpleFormatter格式相同，不过把所有内容都写到了一行中。
+- VerbatimFormatter：只记录了日志信息，没有任何额外的信息。
+- JdkLoggerFormatter：格式化了一个轻量级的日志信息。
+
+## 日志配置
+
+### Tomcat日志
+
+Tomcat的日志配置文件为Tomcat文件夹下conf/logging.properties。下面解说一下这个配置文件。
+
+```
+//以1catalina.org.apache.juli.AsyncFileHandler为例，数字是为了区分同一个类的不同实例，如在原来的基础上还可以添加一个5catalina.org.apache.juli.AsyncFileHandler，这样就有了两个AsyncFileHandler，但可以做不同的事情；catalina、localhost、manager和host-manager是Tomcat用来区分不同系统日志的标志；后面的字符串表示了handler具体的类信息。
+//如果要添加Tomcat服务器的自定义handler，需要在这里添加
+handlers = 1catalina.org.apache.juli.AsyncFileHandler, 2localhost.org.apache.juli.AsyncFileHandler, 3manager.org.apache.juli.AsyncFileHandler, 4host-manager.org.apache.juli.AsyncFileHandler, java.util.logging.ConsoleHandler
+//根日志的handler，如果没有配置handler，则为默认的handler
+.handlers = 1catalina.org.apache.juli.AsyncFileHandler, java.util.logging.ConsoleHandler
+
+//为每个handler设置等级、目录和文件前缀
+//自定义的handler要在这里配置详细信息
+1catalina.org.apache.juli.AsyncFileHandler.level = FINE
+1catalina.org.apache.juli.AsyncFileHandler.directory = ${catalina.base}/logs
+1catalina.org.apache.juli.AsyncFileHandler.prefix = catalina.
+
+2localhost.org.apache.juli.AsyncFileHandler.level = FINE
+2localhost.org.apache.juli.AsyncFileHandler.directory = ${catalina.base}/logs
+2localhost.org.apache.juli.AsyncFileHandler.prefix = localhost.
+
+3manager.org.apache.juli.AsyncFileHandler.level = FINE
+3manager.org.apache.juli.AsyncFileHandler.directory = ${catalina.base}/logs
+3manager.org.apache.juli.AsyncFileHandler.prefix = manager.
+
+4host-manager.org.apache.juli.AsyncFileHandler.level = FINE
+4host-manager.org.apache.juli.AsyncFileHandler.directory = ${catalina.base}/logs
+4host-manager.org.apache.juli.AsyncFileHandler.prefix = host-manager.
+
+java.util.logging.ConsoleHandler.level = FINE
+java.util.logging.ConsoleHandler.formatter = org.apache.juli.OneLineFormatter
+
+//为具体的日志配置等级和handler，其中[Catalina].[localhost].[/manager]对应的容器如下[Engine].[Hos].[Context]
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].level = INFO
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].handlers = 2localhost.org.apache.juli.AsyncFileHandler
+
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/manager].level = INFO
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/manager].handlers = 3manager.org.apache.juli.AsyncFileHandler
+
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/host-manager].level = INFO
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/host-manager].handlers = 4host-manager.org.apache.juli.AsyncFileHandler
+
+```
+
+### 应用日志
+
+应用日志的配置文件为相应应用的WEB-INF/classes/logging.properties,基本与Tomcat日志配置相似。
+
+```
+//定义handler
+handlers = org.apache.juli.FileHandler, java.util.logging.ConsoleHandler
+
+//为handler设置属性
+org.apache.juli.FileHandler.level = FINE
+org.apache.juli.FileHandler.directory = ${catalina.base}/logs
+//为日志设置特殊前缀来区分不同应用的日志
+org.apache.juli.FileHandler.prefix = ${classloader.webappName}.
+
+java.util.logging.ConsoleHandler.level = FINE
+java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+```
+
+### ClassLoaderLogManager
+
+日志的配置是通过ClassLoaderLogManager类来读取的，它继承自LogManager，在这个类中，也可以明白Tomcat是如何做好应用日志分离的。
+
+```java
+    // 根据类加载器来获取相应的配置信息
+    protected synchronized void readConfiguration(ClassLoader classLoader)
+        throws IOException {
+
+        InputStream is = null;
+        // 1、通过应用的类加载器来尝试在应用包中查找配置文件
+        try {
+            if (classLoader instanceof URLClassLoader) {
+                URL logConfig = ((URLClassLoader)classLoader).findResource("logging.properties");
+
+                if(null != logConfig) {
+                    if(Boolean.getBoolean(DEBUG_PROPERTY))
+                        System.err.println(getClass().getName()
+                                           + ".readConfiguration(): "
+                                           + "Found logging.properties at "
+                                           + logConfig);
+
+                    is = classLoader.getResourceAsStream("logging.properties");
+                } else {
+                    if(Boolean.getBoolean(DEBUG_PROPERTY))
+                        System.err.println(getClass().getName()
+                                           + ".readConfiguration(): "
+                                           + "Found no logging.properties");
+                }
+            }
+        } catch (AccessControlException ace) {
+            ClassLoaderLogInfo info = classLoaderLoggers.get(ClassLoader.getSystemClassLoader());
+            if (info != null) {
+                Logger log = info.loggers.get("");
+                if (log != null) {
+                    Permission perm = ace.getPermission();
+                    if (perm instanceof FilePermission && perm.getActions().equals("read")) {
+                        log.warning("Reading " + perm.getName() + " is not permitted. See \"per context logging\" in the default catalina.policy file.");
+                    }
+                    else {
+                        log.warning("Reading logging.properties is not permitted in some context. See \"per context logging\" in the default catalina.policy file.");
+                        log.warning("Original error was: " + ace.getMessage());
+                    }
+                }
+            }
+        }
+        if ((is == null) && (classLoader == ClassLoader.getSystemClassLoader())) {
+        // 2、应用配置文件获取失败，从Tomcat配置文件中获取，从catalina.sh文件中可以看出，java.util.logging.config.file对应的值是$CATALINA_BASE/conf/logging.properties
+            String configFileStr = System.getProperty("java.util.logging.config.file");
+            if (configFileStr != null) {
+                try {
+                    is = new FileInputStream(replace(configFileStr));
+                } catch (IOException e) {
+                    System.err.println("Configuration error");
+                    e.printStackTrace();
+                }
+            }
+            // 3、Tomcat日志配置文件读取失败，尝试读取Java的日志配置文件
+            if (is == null) {
+                File defaultFile = new File(new File(System.getProperty("java.home"), "lib"),
+                    "logging.properties");
+                try {
+                    is = new FileInputStream(defaultFile);
+                } catch (IOException e) {
+                    System.err.println("Configuration error");
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        Logger localRootLogger = new RootLogger();
+        if (is == null) {
+            // 4、仍然没有读到日志配置文件，通过父加载器来获取日志系统
+            ClassLoader current = classLoader.getParent();
+            ClassLoaderLogInfo info = null;
+            while (current != null && info == null) {
+                info = getClassLoaderInfo(current);
+                current = current.getParent();
+            }
+            if (info != null) {
+                localRootLogger.setParent(info.rootNode.logger);
+            }
+        }
+        ClassLoaderLogInfo info =
+            new ClassLoaderLogInfo(new LogNode(null, localRootLogger));
+        classLoaderLoggers.put(classLoader, info);
+
+        if (is != null) {
+            // 通过读取到的日志配置文件来设置相应的值
+            readConfiguration(is, classLoader);
+        }
+        addLogger(localRootLogger);
+
+    }
+```
+
+## 总结
+
+这一节主要讲了一下Tomcat8中的日志系统JULI的工作原理，解释了相关的配置，让开发人员能够便捷地使用Tomcat的日志系统。
