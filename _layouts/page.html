@@ -50,11 +50,12 @@ layout: default
             <div>
                 <hr><h5><a href="/about/">ABOUT ME</a></h5>
                 <div class="short-about">
-                    {% if site.sidebar-portrait %}
-                    <img src="{{site.sidebar-portrait}}" />
+                    {% assign my-info = site.data.personal-info}
+                    {% if my-info.sidebar-portrait %}
+                    <img src="{{my-info.sidebar-portrait}}" />
                     {% endif %}
-                    {% if site.sidebar-personal-desc %}
-                    <p>{{site.sidebar-personal-desc}}</p>
+                    {% if my-info.sidebar-personal-desc %}
+                    <p>{{my-info.sidebar-personal-desc}}</p>
                     {% endif %}
                     <!-- SNS Link -->
                     <ul class="list-inline">
@@ -68,9 +69,9 @@ layout: default
                             </a>
                         </li>
                         {% endif %}
-                        {% if site.github_username %}
+                        {% if my-info.github_username %}
                         <li>
-                            <a target="_blank" href="https://github.com/{{ site.github_username }}">
+                            <a target="_blank" href="https://github.com/{{ my-info.github-username }}">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-github fa-stack-1x fa-inverse"></i>
@@ -78,9 +79,9 @@ layout: default
                             </a>
                         </li>
                         {% endif %}
-                        {% if site.zhihu_username %}
+                        {% if my-info.zhihu_username %}
                         <li>
-                            <a target="_blank" href="https://www.zhihu.com/people/{{ site.zhihu_username }}">
+                            <a target="_blank" href="https://www.zhihu.com/people/{{ my-info.zhihu-username }}">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa  fa-stack-1x fa-inverse"></i>
@@ -88,9 +89,9 @@ layout: default
                             </a>
                         </li>
                         {% endif %}
-                        {% if site.weibo_username %}
+                        {% if my-info.weibo_username %}
                         <li>
-                            <a target="_blank" href="http://weibo.com/{{ site.weibo_username }}">
+                            <a target="_blank" href="http://weibo.com/{{ my-info.weibo-username }}">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
@@ -98,9 +99,9 @@ layout: default
                             </a>
                         </li>
                         {% endif %}
-                        {% if site.linkedin_username %}
+                        {% if my-info.linkedin_username %}
                         <li>
-                            <a target="_blank" href="http://linkedin.com/in/{{ site.linkedin_username }}">
+                            <a target="_blank" href="http://linkedin.com/in/{{ my-info.linkedin-username }}">
                                     <span class="fa-stack fa-lg">
                                         <i class="fa fa-circle fa-stack-2x"></i>
                                         <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
