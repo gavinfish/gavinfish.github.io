@@ -22,23 +22,24 @@ header-img: "img/contact-bg.jpg"
 
 <div class="Container">
     <div class="row">
-        <div class="col-lg-8 col-lg-offset-3
-                col-md-8 col-md-offset-3
+        <div class="col-lg-6 col-lg-offset-3
+                col-md-6 col-md-offset-3
                 col-sm-12
                 col-xs-12">
             <!-- {% for tag in site.tags %}
                 <a href="#{{ tag[0] }}" title="{{ tag[0] }}">{{ tag[0] }}</a>
             {% endfor %} -->
 
-            <div class="accordion" id="accordion-tags">
+            <div class="panel-group" id="panel-tags" role="tablist" aria-multiselectable="true">
                 {% for tag in site.tags %}
-                <div class="accordion-group">
-                    <div class="accordion-heading">
+                <div class="panel panel-default">
+                    <div class="panel-heading" role="tab">
+                        <a role="button" data-toggle="collapse" data-parent="#panel-tags" aria-expanded="true" aria-controls="{{ tag[0] }}" href="#{{ tag[0] }}"><span class="glyphicon glyphicon-tag"></span> {{ tag[0] }}</a>
                     </div>
-                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion-tags" href="#{{ tag[0] }}"><span class="glyphicon glyphicon-tag"></span> {{ tag[0] }}</a>
-                    <div id="{{ tag[0] }}" class="accordion-body in collapse">
+                    
+                    <div id="{{ tag[0] }}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="{{ tag[0] }}">
                         {% for post in tag[1] %}
-                        <div class="accordion-inner">
+                        <div class="panel-body">
                             <a href="{{ post.url | prepend: site.baseurl }}">
                                 <h5 class="post-title">{{ post.title }}</h5>
                             </a>

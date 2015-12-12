@@ -143,12 +143,6 @@
 #tag-cloud .yellow {
     color: yellow;
 }
-.accordion-inner{
-  font-size: 21px;
-  line-height: 1.3;
-  margin-top: 30px;
-  margin-bottom:10px;
-}
 @media (min-width: 1200px) {
   .post-container,
   .sidebar-right-container {
