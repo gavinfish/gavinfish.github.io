@@ -1,0 +1,83 @@
+---
+layout: post
+title:  "Guava之前置条件判断"
+date:   2015-12-16
+categories: Guava
+tags: Google Guava
+
+---
+
+# 谷歌Guava学习之前置条件判断
+
+## 前言
+
+用Guava有一段时间了，花点时间对一些常用的功能做下整理。
+
+## 存在的问题
+
+我们总会对函数中传入的参数做严格的检查，专业点的说法就是前置条件判断，这在做算法练习的时候尤为明显，如果不把参数的情况考虑全面了，往往直接导致算法无法通过一些简单的测试用例。我觉得参数的校验是十分必要的，它可以在进行复杂的逻辑操作之前就发现潜在的错误，提早抛出异常的同时也可以帮助更快地定位错误位置。
+
+
+## 常用的处理方式
+
+通常的参数校验方式是写一堆的if/else判断，这样要写大量重复的代码，且每个人对参数错误问题的处理方式又不同，多人合作的项目会形成混乱，复用性差。像如下的代码：
+
+```java
+    public void doSomething( List<Object> list ) {
+      if( list == null ) {
+        throw new IllegalArgumentException( "List must not be null" );
+      }
+      if( list.isEmpty() ) {
+        throw new IllegalArgumentException( "List must not be empty" );
+      }
+      doSomethingMore( list );
+    }
+```
+
+## Guava提供的方式
+
+Guava提供了一个Preconditions类来专门处理参数校验问题，它提供了多种参数校验的检查方式。
+
+| 方法名        |  解释   |  抛出的异常  |
+| :--------:   | :-----:  | :----:  |
+| checkArgument(boolean)     | 检查传入的参数是否符合某些状态 |IllegalArgumentException    |
+| checkState(boolean)        |   检查对象的状态  |   IllegalStateException   |
+| checkNotNull(T)        |    检查传入的参数是否为null    |  NullPointerException  |
+| checkElementIndex(int index, int size) | 检查元素是否在数组、链表、字符串的合法范围内|IndexOutOfBoundsException|
+| chekPositionIndex(int index, int size)| 检查位置是否在数组、链表、字符串的合法范围内|IndexOutOfBoundsException|
+| chekPositionIndexes(int start, int end, int size)| 检查位置是否在数组、链表、字符串的合法的子集范围内|IndexOutOfBoundsException|
+
+注：checkElementIndex和checkPositionIndex的区别是，element要在范围内则index的最大值只能是size-1，而对于位置来说，最大值可以包括size。
+
+通过静态引入Preconditions包（`import static com.google.common.base.Preconditions.*;`），我们可以方便地调用上面的方法，而且一个类型的错误会抛出统一的异常，方便处理。同时对前三种检查都有两种重载方式，方便传入更加详细的错误信息，具体请参考如下例子：
+
+> checkArgument(i >= 0, "参数%s异常，应该是正整数", i);
+> checkArgument(i < j, "参数大小错误，实际大小情况%s > %s", i, j);
+
+## 样例代码
+
+```java
+	public void doSomething(List<Object> list) {
+		checkNotNull(list, "List must not be null");
+		checkArgument(!list.isEmpty(), "List must not be empty");
+		doSomethingMore(list);
+	}
+
+	public void doSomething() {
+		checkState(field.isPresent(), "Argument is not initialized");
+		doSomethingMore();
+	}
+	
+	public int get(List<Integer> list, int index){
+		checkElementIndex(index, list.size(), "Index is wrong.");
+		return list.get(index);
+	}
+	
+	public void insert(List<Integer> list, int index, int value){
+		checkPositionIndex(index, list.size());
+		list.add(index, value);
+	}
+```
+
+
+
