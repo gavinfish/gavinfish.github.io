@@ -1,0 +1,262 @@
+---
+layout: post
+title:  "必须了解的Object知识"
+date:   2015-12-17
+categories: Java
+tags: Java
+
+---
+
+# 必须了解的Object知识
+
+---
+
+作为Java中所有类的根类，Object提供了很多基础的方法，我们经常会覆写它的方法，但很多时候因为不了解这些方法内在的含义以及与其他方法之间的关系而错误的覆写。下面介绍一下各个方法，已经如何合理地覆写它们。
+
+## Hashcode
+
+hashcode方法为对象定义了计算哈希值的方式。在Java中有这么几条硬性的规定：
+
+1. 在程序运行期间，如果对象用于equals方法中比较的变量没有改变，那么它的哈希值应该不变。
+2. 如果两个对象的是相等的（调用equals返回为true），那么这两个对象的哈希值应该相同。
+3. 如果两个对象不相等，它们的哈希值可能相等，也可能不等。但大量不同对象的哈希值相等时，会影响该类对象在散列表中的表现。
+
+### 目的
+
+覆写hashCode方法最大的目的在于使对象能够在用哈希值辅助存储的数据结构中能够正常工作，如HashMap、HashSet和HashTable。
+
+
+在Java原生的hashCode实现方式下会给对象的每个实例一个不同的哈希值，这样上面的第二点要求是没法满足的，举个具体的例子来说，我们定义一个Man类来表示一个人，有一个唯一的id（类似身份证号）和姓名两个参数。用一个HashMap来表示他的所有的朋友。
+
+```java
+public class Man {
+	private String name;
+	private int id;
+	
+	public  Man(String name,int id) {
+		this.name=name;
+		this.id=id;
+	}
+	
+	public static void main(String args[]){
+		Map<Man, Man> friends = new HashMap<Man, Man>();
+		friends.put(new Man("Mike", 1211), new Man("Andy", 1119));
+		System.out.println(friends.get(new Man("Mike", 1211)));
+	}
+}
+```
+
+执行上面的程序我们可以看到输出的是null。因为Mike虽然是同一个人(有着相同的id)，但在上面的语句中却通过new来生成了两个不同的对象，根据Java原生的hashCode方法，会导致存储和查找的位置不同，最终查找失败。
+
+### 实现方式
+
+那么我们该如何覆写hashCode呢，最简单的方式是直接返回一个常数，这样上面的三条规则就都能满足了。但这样的话所有人包括Mike和Andy的哈希值都会相同，这样他们都会存储到一个散列桶中，散列表直接退化为一个链表或数组，效率大幅下降。典型的做法是把在equals中要用到的域都通过计算集成到哈希值中。一些专家做了一些优化，并形成了一套可行性很高的方案：
+
+1. 把一个非零常数存于一个int型的result值中
+2. 把对象中的所有域依次计算哈希值h，并通过公式`result = 31 * result + h`集成到result中
+3. 返回result作为hash值
+
+下面给出例子中的对象的散列实现方式：
+
+```java
+@Override
+public int hashCode() {
+    int result = 1;
+	result = 31 * result + id;
+	result = 31 * result + (name == null ? 0 : name.hashCode());
+	return result;
+}
+```
+
+### 注意点
+
+- 冗余的域（可以通过其他的域计算出来的域）可以不用来计算hashCode
+- 没有在equals中用到的域不要用来计算hashCode
+- result初始值不为0可以保证即使起始的一些域的hashCode都为0时，result仍在不断变化
+- 31可以换成其他的质数，不过31通过位移运算在乘法计算中有一些性能优化
+- 对一些计算成本高的哈希值可以采用延迟计算、缓存等优化方案
+
+## Equals
+
+equals方法用来判断两个对象在逻辑上是不是等同的，例如，如果一个人是通过id唯一确定的，那么不管new几个id相同的对象，逻辑上他们都是同一个人。Java中对equals方法的要求是：
+
+1. 自反性：对自己调用equals必须返回true
+2. 对称性：对于非null的x和y，当且仅当x.equals(y)返回true时，y.equals(x)返回true
+3. 传递性：对于非null的x,y,z，有如下关系x.equals(y),y.equals(z) -> x.equals(z)
+4. 一致性：只要equals比较要用到的域的值不变，equals方法前后返回的值就应该相同
+5. 对于非null的x，x.equals(null)返回false
+
+### 目的
+
+原Object对equals的实现方式是通过引用是否相同，虽然符合上面的所有的性质。但此时`new Man("Mike", 21).equals(new Man("Mike", 21))`返回为false，显然不符合我们的要求。
+
+### 实现方法
+
+为了实现以上的约束，并尽量提高程序的效率，我们可以对equals进行如下的构造：
+
+1. 判断传入的是否是同一个对象，即判断obj==this，这只是一个性能上的优化
+2. 判断传入的是否是该类型的对象，这可以快速排除对象不同、null等情况
+3. 对该对象的要比较的域依次进行比较
+
+下面是例子中的equals方法的实现,把只要id相等的对象都认为是同一个人：
+
+```java
+@Override
+public boolean equals(Object obj) {
+	if(obj==this){
+		return true;
+	}
+	if(!(obj instanceof Man)){
+		return false;
+	}
+	Man other = (Man)obj;
+	if(this.id==other.id){
+		return true;
+	}
+	else{
+		return false;
+	}
+}
+```
+
+### 注意点
+
+- equals方法传入的是Object参数，很多人会粗心地自己重载一个类型对应的equals方法
+- 对象的域也可能是另一个对象，一般判断该域相等时也应该调用它的equals方法
+- 注意equals和hashCode的关联
+- equals方法一般用来进行简单的值类的比较，复杂的逻辑的比较应自定义方法
+
+
+## Clone
+
+clone方法用来给出对象本身的一个副本。
+
+### 目的
+
+很多时候我们需要复制一个对象，如当作副本进行缓存，当然可以获取相应的参数通过构造函数来实现对象的复制，但这会使得调用方的方法变得繁杂。Object提供了clone方法来帮助对象创建副本。
+
+### 实现方式
+
+想要你的类能够调用clone方法，该类必须要实现Cloneable接口，这是一个空的接口，仅仅来声明实现了这个接口的类是可以clone的。如果不实现该接口，会抛出**CloneNotSupportedException**异常。需要注意的是，Object中的clone方法是protected的，且返回的值是Object类型。如果我们要覆写clone方法，应把该方法改为public，且返回类自身的对象。
+
+```java
+@Override
+public Man clone() throws CloneNotSupportedException {
+	return (Man) super.clone();
+}
+```
+
+在例子中只是调用了super方法并进行了一下转型，这是因为Man中只有基本类型的域。但如果类中有可变的引用域时，简单的调用super.clone()就不行了。下面为Man添加一个妻子的属性，妻子是一个独立的对象。具体代码如下：
+
+```java
+public class Woman implements Cloneable {
+	private String name;
+
+	public Woman(String name) {
+		this.name = name;
+	}
+
+	@Override
+	public Woman clone() throws CloneNotSupportedException {
+		return (Woman) super.clone();
+	}
+
+	@Override
+	public String toString() {
+		return String.format("[name:%s]", this.name);
+	}
+
+	public void rename(String newName) {
+		this.name = newName;
+	}
+}
+
+public class Man implements Cloneable{
+	private String name;
+	private int id;
+	private Woman wife;
+
+	public Man(String name, int id, Woman wife) {
+		this.name = name;
+		this.id = id;
+		this.wife = wife;
+	}
+	
+	@Override
+	public Man clone() throws CloneNotSupportedException {
+		return (Man) super.clone();
+	}
+	
+	@Override
+	public String toString() {
+		return String.format("[name:%s, id:%d]", this.name,this.id);
+	}
+
+	public static void main(String args[]) {
+		Man mike = new Man("Mike", 1211,new Woman("Anny"));
+		try {
+			Man mike2 = (Man) mike.clone();
+			mike.wife.rename("Lily");
+			System.out.println(mike2.wife);
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+		}
+		
+	}
+}
+
+```
+
+这时的输出是`[name:Lily]`，可以看出Mike的妻子改了个名字，结果保存的副本也改变了。那要怎么做才能使副本的值不变呢？我们需要对可变的引用也进行复制。
+
+```java
+@Override
+public Man clone() throws CloneNotSupportedException {
+	Man man = (Man) super.clone();
+	man.wife = (Woman) this.wife.clone();
+	return man;
+}
+```
+
+### 注意点
+
+- 继承的子类调用父类的clone方法时要确保父类的clone方法是正常工作的
+- 对可变引用进行clone时要保证引用被正确clone，因为引用自身也可能有可变的引用域
+
+## toString
+
+toString方法用来将对象的信息转化成一个字符串。
+
+### 目的
+
+Object中对toString实现的方式是`类名+@+十六进制的对象编号`，例如drfish.Man@24da72，显然这种形式的输出阅读起来不方便，让人无法了解对象的真正情况。Java建议所有的类都覆写toString方法，返回对象的关键信息，方便查看和诊断。
+
+### 实现方式
+
+toString的实现比较简单，只要自己构造一个包含想要展示的信息的字符串并返回。
+
+```java
+@Override
+public String toString() {
+	return String.format("[name:%s, id:%d]", this.name,this.id);
+}
+```
+
+输出结果如下：[name:Mike, id:1211]
+
+### 注意点
+
+- 字符串连接性能的考虑
+- 在文档注释中对你的格式进行说明
+- 不要随意更改格式
+
+## 总结
+
+这篇文章主要介绍了Java中的基础类Object中的一些可覆写的方法，以及在覆写它们时需要注意的事项。
+
+
+
+
+
+
+
