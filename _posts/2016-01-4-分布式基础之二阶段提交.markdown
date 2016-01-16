@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "分布式基础之二阶段提交"
-date:   2015-01-4
+date:   2016-01-4
 categories: 大数据
 tags: 分布式
 
