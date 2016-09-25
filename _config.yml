@@ -10,7 +10,7 @@ markdown: kramdown
 kramdown:
   input:  GFM
   enable_coderay: true
-highlighter: pygments
+highlighter: rouge
 permalink: pretty
 paginate: 5
 
