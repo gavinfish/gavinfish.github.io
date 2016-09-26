@@ -216,11 +216,11 @@ h4 {
   font-size: 20px;
 }
 a {
-  color: #404040;
+  color: #0085a1;
 }
 a:hover,
 a:focus {
-  color: #0085a1;
+  color: darkred;
 }
 a img:hover,
 a img:focus {
