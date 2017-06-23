@@ -9,7 +9,7 @@ url: "" # the base hostname & protocol for your site
 markdown: kramdown
 kramdown:
   input:  GFM
-  enable_coderay: true
+  syntax_highligher: true
 highlighter: rouge
 permalink: pretty
 paginate: 5
@@ -18,4 +18,4 @@ paginate: 5
 encoding: "utf-8"
 
 # Plugins settings
-gems: [jekyll-paginate]
+plugins: [jekyll-paginate]
